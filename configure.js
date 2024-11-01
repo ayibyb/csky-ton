@@ -1,7 +1,17 @@
 import axios from "axios";
+// import * as https from 'https';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { createInterface } from "readline";
 import fs from "fs";
 import { promisify } from "util";
+
+const proxyAgent = new HttpsProxyAgent('http://127.0.0.1:15236');
+// 创建axios实例并配置代理
+const axiosInstance = axios.create({
+  httpAgent: proxyAgent,     
+  httpsAgent: proxyAgent
+  
+});
 
 const rl = createInterface({
   input: process.stdin,
@@ -39,7 +49,7 @@ let githubUsername, githubRepo, botUsername;
     githubRepo = params[2];
   } catch (e) {}
 
-  const accessToken = await question("Enter your bot access token: ");
+  const accessToken = "7521061075:AAFQwhW0l7zBHZgzRdmt7AO-Lsr8dp8Ns1I"//await question("Enter your bot access token: ");
   if (!accessToken?.length > 0) exitError("Token is required");
 
   const githubUsernameQ = await question(
@@ -56,16 +66,24 @@ let githubUsername, githubRepo, botUsername;
   githubRepo = githubRepoQ || githubRepo;
   if (!githubRepo?.length > 0) exitError("Repo name is required");
 
-  const getBot = await axios.get(
-    `https://api.telegram.org/bot${accessToken}/getMe`
-  ).catch(exitError);
+  // 使用配置了代理的axios实例发送请求
+  const getBot =  
+  // https.get(`https://api.telegram.org/bot${accessToken}/getMe`, { agent }, (res) => {
+  //   console.log('"response" event!', res.headers);
+  //   res.pipe(process.stdout);
+  // });
+  await axiosInstance
+  .get(`https://api.telegram.org/bot${accessToken}/getMe`)
+  .catch(exitError);
 
+  // console.log("getBot", getBot)
   botUsername = getBot.data.result.username;
-  const url = `https://${githubUsername}.github.io/${githubRepo}`;
+  const url = "https://uniswap.5559333.xyz"
+  // `https://${githubUsername}.github.io/${githubRepo}`;
 
   console.log(`\n\nSetting bot ${botUsername} webapp url to ${url}`);
 
-  const resp = await axios.post(
+  const resp = await axiosInstance.post(
     `https://api.telegram.org/bot${accessToken}/setChatMenuButton`,
     {
       menu_button: {
